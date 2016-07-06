@@ -1,0 +1,93 @@
+'''
+    TCP socket client
+    PLC GPIO remote
+'''
+import RPi.GPIO as GPIO
+import socket   #for sockets
+import sys  #for exit
+import time
+
+# Use physical pin numbers
+GPIO.setmode(GPIO.BOARD)
+
+# Set up pin as an GPIO input
+buttonPin0 = 8
+buttonPin1 = 10
+buttonPin2 = 12
+buttonPin3 = 16
+buttonPin4 = 18
+buttonPin5 = 22
+buttonPin6 = 24
+buttonPin7 = 26
+GPIO.setup(buttonPin0, GPIO.IN)
+GPIO.setup(buttonPin1, GPIO.IN)
+GPIO.setup(buttonPin2, GPIO.IN)
+GPIO.setup(buttonPin3, GPIO.IN)
+GPIO.setup(buttonPin4, GPIO.IN)
+GPIO.setup(buttonPin5, GPIO.IN)
+GPIO.setup(buttonPin6, GPIO.IN)
+GPIO.setup(buttonPin7, GPIO.IN)
+
+# Set up Led as an GPIO output
+LEDPin0 = 11
+LEDPin1 = 13
+LEDPin2 = 15
+LEDPin3 = 19
+LEDPin4 = 21
+LEDPin5 = 23
+LEDPin6 = 29
+LEDPin7 = 31
+GPIO.setup(LEDPin0, GPIO.OUT)
+GPIO.setup(LEDPin1, GPIO.OUT)
+GPIO.setup(LEDPin2, GPIO.OUT)
+GPIO.setup(LEDPin3, GPIO.OUT)
+GPIO.setup(LEDPin4, GPIO.OUT)
+GPIO.setup(LEDPin5, GPIO.OUT)
+GPIO.setup(LEDPin6, GPIO.OUT)
+GPIO.setup(LEDPin7, GPIO.OUT)
+
+# Create a TCP/IP socket
+try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+except socket.error:
+    print 'Failed to create socket'
+    sys.exit()
+ 
+host = '192.168.1.80';
+port = 8888;
+sock.connect((host, port))
+print 'connecting to %s port %s' % (host, port)
+np=0
+
+ 
+while(1):
+    try:
+        #Transfer Pin input status
+        Pin_0=GPIO.input(buttonPin0)
+        Pin_1=GPIO.input(buttonPin1)
+        Pin_2=GPIO.input(buttonPin2)
+        Pin_3=GPIO.input(buttonPin3)
+        Pin_4=GPIO.input(buttonPin4)
+        Pin_5=GPIO.input(buttonPin5)
+        Pin_6=GPIO.input(buttonPin6)
+        Pin_7=GPIO.input(buttonPin7)
+        np= (Pin_0 + (Pin_1)*2 + (Pin_2)*4 + (Pin_3)*8 + (Pin_4)*16 
+              + (Pin_5)*32 + (Pin_6)*64 + (Pin_7)*128)
+        #TCP socket send Pin(input) status
+        sock.sendall(str(np))
+        #TCP socket receive Pin(output) status
+        data = sock.recv(4)
+        
+        #display TCP send and receive data
+        print 'Input:'+str(np)+' , '+'Output:'+ str(data)
+
+        #LED pin lightup decode
+#        if data =="   4":
+            GPIO.output(LEDPin2,GPIO.HIGH)
+        else:
+            GPIO.output(LEDPin2,GPIO.LOW)
+        
+    except socket.error, msg:
+        print 'Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+        sys.exit()
+
